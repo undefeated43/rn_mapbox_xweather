@@ -64,7 +64,6 @@ class WindParticlesLayer extends React.PureComponent<Props> {
 
   render() {
     return (
-      // @ts-expect-error codegen component
       <RNMBXWindParticlesLayerNativeComponent {...this.props} />
     );
   }
