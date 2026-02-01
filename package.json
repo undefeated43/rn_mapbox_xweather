@@ -39,7 +39,6 @@
     "!**/.*"
   ],
   "scripts": {
-    "example": "yarn workspace @rnmapbox/maps-example",
     "test": "yarn lint && yarn unittest",
     "typecheck": "tsc --noEmit",
     "lint": "yarn eslint .",
@@ -152,9 +151,6 @@
       "optional": true
     }
   },
-  "workspaces": [
-    "example"
-  ],
   "resolutions": {
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0"
