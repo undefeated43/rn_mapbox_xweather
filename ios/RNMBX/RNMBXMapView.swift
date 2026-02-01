@@ -1,6 +1,9 @@
 @_spi(Restricted) import MapboxMaps
 import Turf
 import MapKit
+import MapsGLMaps
+import MapsGLMapbox
+import Combine
 
 public typealias RNMBXMapViewFactoryFunc = (String, UIView) -> (MapView?)
 
@@ -179,6 +182,9 @@ open class RNMBXMapView: UIView, RCTInvalidating {
   public func invalidate() {
     self.removeAllFeaturesFromMap(reason: .ViewRemoval)
 
+    // Cleanup XWeather
+    cleanupXWeatherController()
+
     cancelables.forEach { $0.cancel() }
     cancelables.removeAll()
 
@@ -240,6 +246,24 @@ open class RNMBXMapView: UIView, RCTInvalidating {
   }()
 
   var _mapView: MapView! = nil
+
+  // MARK: - XWeather Integration
+
+  /// XWeather MapboxMapController instance
+  var xweatherController: MapboxMapController? = nil
+
+  /// XWeather account credentials
+  var xweatherAccount: XweatherAccount? = nil
+
+  /// Combine cancellables for XWeather subscriptions
+  var xweatherCancellables: Set<AnyCancellable> = []
+
+  /// XWeather client ID
+  var xweatherClientId: String? = nil
+
+  /// XWeather client secret
+  var xweatherClientSecret: String? = nil
+
   func createMapView() -> MapView {
     if let mapViewImpl = mapViewImpl, let mapViewInstance = createAndAddMapViewImpl(mapViewImpl, self) {
       _mapView = mapViewInstance
@@ -426,6 +450,8 @@ open class RNMBXMapView: UIView, RCTInvalidating {
     case styleURL
     case gestureSettings
     case preferredFramesPerSecond
+    case xweatherClientId
+    case xweatherClientSecret
 
     func apply(_ map: RNMBXMapView) -> Void {
       switch self {
@@ -464,6 +490,8 @@ open class RNMBXMapView: UIView, RCTInvalidating {
         map.applyGestureSettings()
       case .preferredFramesPerSecond:
         map.applyPreferredFramesPerSecond()
+      case .xweatherClientId, .xweatherClientSecret:
+        map.applyXWeatherCredentials()
       }
     }
   }
@@ -906,6 +934,27 @@ open class RNMBXMapView: UIView, RCTInvalidating {
     }
   }
 
+  @objc public func setReactXweatherClientId(_ value: String?) {
+    self.xweatherClientId = value
+    changed(.xweatherClientId)
+  }
+
+  @objc public func setReactXweatherClientSecret(_ value: String?) {
+    self.xweatherClientSecret = value
+    changed(.xweatherClientSecret)
+  }
+
+  func applyXWeatherCredentials() {
+    guard let clientId = xweatherClientId,
+          let clientSecret = xweatherClientSecret else {
+      return
+    }
+
+    withMapView { mapView in
+      self.initializeXWeatherController(clientID: clientId, clientSecret: clientSecret)
+    }
+  }
+
   private func removeAllFeaturesFromMap(reason: RemovalReason) {
     features.forEach { entry in
       if (entry.addedToMap) {
@@ -953,6 +1002,55 @@ open class RNMBXMapView: UIView, RCTInvalidating {
 
   func refreshComponentsAfterStyleChange(style: Style) {
       addFeaturesToMap(style: style)
+  }
+
+  // MARK: - XWeather Controller Management
+
+  /// Initialize XWeather controller with credentials
+  func initializeXWeatherController(clientID: String, clientSecret: String) {
+    guard let mapView = _mapView else {
+      Logger.log(level: .warn, message: "Cannot initialize XWeather controller before MapView is created")
+      return
+    }
+
+    // Don't reinitialize if already set with same credentials
+    if let existingAccount = xweatherAccount,
+       existingAccount.id == clientID,
+       existingAccount.secret == clientSecret {
+      return
+    }
+
+    let account = XweatherAccount(id: clientID, secret: clientSecret)
+    self.xweatherAccount = account
+
+    let controller = MapboxMapController(map: mapView, account: account)
+    self.xweatherController = controller
+
+    // Subscribe to controller load event
+    controller.onLoad.observe { [weak self] _ in
+      Logger.log(level: .info, message: "XWeather MapController loaded successfully")
+      self?.xweatherDidLoad()
+    }.store(in: &xweatherCancellables)
+
+    Logger.log(level: .info, message: "XWeather controller initialized")
+  }
+
+  /// Called when XWeather controller finishes loading
+  private func xweatherDidLoad() {
+    // Notify any waiting weather layers
+    features.forEach { entry in
+      if let weatherLayer = entry.feature as? RNMBXWeatherLayerProtocol {
+        weatherLayer.onXWeatherControllerReady(self.xweatherController!)
+      }
+    }
+  }
+
+  /// Cleanup XWeather resources
+  func cleanupXWeatherController() {
+    xweatherCancellables.forEach { $0.cancel() }
+    xweatherCancellables.removeAll()
+    xweatherController = nil
+    xweatherAccount = nil
   }
 
   var reactStyleURL: String? = nil

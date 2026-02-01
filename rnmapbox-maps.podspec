@@ -261,6 +261,8 @@ Pod::Spec.new do |s|
       when 'mapbox'
         s.dependency 'MapboxMaps', $MapboxImplVersion
         s.dependency 'Turf'
+        s.dependency 'MapsGL', '~> 1.0.5'
+        s.dependency 'MapsGLMapbox', '~> 1.0.5'
         s.swift_version = '5.0'
       else
         fail "$RNMapboxMapsImpl should be mapbox but was: $RNMapboxMapsImpl"

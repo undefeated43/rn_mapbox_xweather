@@ -440,6 +440,18 @@ type Props = ViewProps & {
   deselectAnnotationOnTap?: boolean;
 
   /**
+   * XWeather API client ID for weather layer integration.
+   * Required to use XWeather weather layers like WindParticlesLayer.
+   */
+  xweatherClientId?: string;
+
+  /**
+   * XWeather API client secret for weather layer integration.
+   * Required to use XWeather weather layers like WindParticlesLayer.
+   */
+  xweatherClientSecret?: string;
+
+  /**
    * @private Experimental support for custom MapView instances
    */
   mapViewImpl?: string;

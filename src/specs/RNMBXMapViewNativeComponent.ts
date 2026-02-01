@@ -81,6 +81,9 @@ export interface NativeProps extends ViewProps {
   onMapChange?: DirectEventHandler<OnMapChangeEventType>;
   onCameraChanged?: DirectEventHandler<OnCameraChangedEventType>;
 
+  xweatherClientId?: OptionalProp<string>;
+  xweatherClientSecret?: OptionalProp<string>;
+
   mapViewImpl?: OptionalProp<string>;
   preferredFramesPerSecond?: OptionalProp<Int32>;
 }
