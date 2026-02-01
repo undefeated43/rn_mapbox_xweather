@@ -1,7 +1,6 @@
 import Foundation
 import MapboxMaps
 import MapsGLMaps
-import MapsGLMapbox
 
 /// Protocol for XWeather layers that need controller access
 protocol RNMBXWeatherLayerProtocol: AnyObject {
