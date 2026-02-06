@@ -2,6 +2,7 @@
 import Turf
 import MapKit
 import MapsGLMaps
+import MapsGL
 import Combine
 
 public typealias RNMBXMapViewFactoryFunc = (String, UIView) -> (MapView?)

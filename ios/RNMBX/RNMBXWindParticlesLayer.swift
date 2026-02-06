@@ -1,5 +1,6 @@
 import Foundation
 import MapsGLMaps
+import MapsGL
 
 @objc(RNMBXWindParticlesLayer)
 public class RNMBXWindParticlesLayer: RNMBXWeatherLayer {
